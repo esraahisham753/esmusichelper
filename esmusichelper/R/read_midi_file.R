@@ -22,7 +22,7 @@ library(tuneR)
 read_midi_file <- function(midi_file_path) {
   # Load the MIDI file
   midi_data <- readMidi(midi_file_path)
-  
+ 
   note_on_events <- midi_data[midi_data$event == "Note On" & midi_data$parameter2 > 0, ]
   
   note_off_events <- midi_data[midi_data$event == "Note Off" | (midi_data$event == "Note On" & midi_data$parameter2 == 0), ]
