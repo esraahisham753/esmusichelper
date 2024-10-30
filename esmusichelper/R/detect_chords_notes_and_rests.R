@@ -1,8 +1,34 @@
+#' Detect Chords, Notes, and Rests from MIDI Information
+#'
+#' This function processes MIDI information to detect chords, individual notes,
+#' and rests based on the timing of note-on and note-off events. It groups notes
+#' that are played close together in time into chords and identifies rests based
+#' on gaps between notes.
+#'
+#' @param midi_info A list containing two data frames: 
+#'   - `note_on_events`: Data frame with note-on events, where each row contains 
+#'     the `time` (timestamp) and `parameter1` (MIDI note number).
+#'   - `note_off_events`: Data frame with note-off events, where each row contains 
+#'     the `time` (timestamp) and `parameter1` (MIDI note number).
+#' @param max_time_diff Numeric. The maximum time difference (in ticks) allowed 
+#'   to consider notes as part of the same chord. Default is 10.
+#' @return A data frame with two columns:
+#'   - `timestamp`: The timestamp (in ticks) of each note/chord/rest.
+#'   - `note`: The corresponding note name or "r" for rests. Chords are represented 
+#'     as a list of note names.
+#' @export
+#'
+#' @examples
+#' midi_info <- list(
+#'   note_on_events = data.frame(time = c(0, 5, 15, 20), parameter1 = c(60, 64, 62, 60)),
+#'   note_off_events = data.frame(time = c(10, 15, 20, 25), parameter1 = c(60, 64, 62, 60))
+#' )
+#' returns the notes and rests for each timestamp
 detect_chords_notes_and_rests <- function(midi_info, max_time_diff = 10) {
   note_on_events <- midi_info$note_on_events
   note_off_events <- midi_info$note_off_events
   ticks_per_beat <- 480
-  notes_df <- data.frame(timestamp = numeric(), note = character(), duration = character(), stringsAsFactors = FALSE)
+  notes_df <- data.frame(timestamp = numeric(), note = character(), stringsAsFactors = FALSE)
   
   i <- 1
   last_off_time <- 0  # Tracks the end time of the last note/chord
@@ -35,14 +61,14 @@ detect_chords_notes_and_rests <- function(midi_info, max_time_diff = 10) {
     if (note_on_time - last_off_time > max_time_diff) {
       rest_duration_in_ticks <- note_on_time - last_off_time
       rest_duration <- get_duration(rest_duration_in_ticks, ticks_per_beat)
-      notes_df <- rbind(notes_df, data.frame(timestamp = last_off_time, note = "r", duration = rest_duration, stringsAsFactors = FALSE))
+      notes_df <- rbind(notes_df, data.frame(timestamp = last_off_time, note = "r", stringsAsFactors = FALSE))
     }
     
     # Add chord or note to the dataframe
     if (length(chord_notes) > 1) {
-      notes_df <- rbind(notes_df, data.frame(timestamp = note_on_time, note = I(list(midi_note_number_to_name(chord_notes))), duration = duration, stringsAsFactors = FALSE))
+      notes_df <- rbind(notes_df, data.frame(timestamp = note_on_time, note = I(list(midi_note_number_to_name(chord_notes))), stringsAsFactors = FALSE))
     } else {
-      notes_df <- rbind(notes_df, data.frame(timestamp = note_on_time, note = midi_note_number_to_name(chord_notes[[1]]), duration = duration, stringsAsFactors = FALSE))
+      notes_df <- rbind(notes_df, data.frame(timestamp = note_on_time, note = midi_note_number_to_name(chord_notes[[1]]), stringsAsFactors = FALSE))
     }
     
     last_off_time <- max_note_off_time  # Update the last note/chord release time

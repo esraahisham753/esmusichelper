@@ -13,7 +13,9 @@
 #' midi_note_number_to_name(c(60, 61, 62)) # Returns c("C4", "C#4", "D4")
 #' midi_note_number_to_name(69) # Returns "A4"
 midi_note_number_to_name <- function(note_numbers) {
-  if (! is.numeric(note_numbers)) {
+  note_numbers <- unlist(note_numbers)
+  
+  if (any(! is.numeric(note_numbers))) {
     stop("must be integer")
   }
   
